@@ -2,11 +2,20 @@ services:
   - type: web
     name: logcell
     runtime: ruby
-    buildCommand: bundle install && bundle exec rails assets:precompile && bundle exec rails db:migrate
+    plan: free
+    buildCommand: |
+      gem install bundler
+      bundle install
+      bundle exec rails assets:precompile
+      bundle exec rails db:migrate
     startCommand: bundle exec rails server -p $PORT -b 0.0.0.0
     envVars:
       - key: RAILS_ENV
         value: production
+      - key: RAILS_LOG_TO_STDOUT
+        value: true
+      - key: RAILS_SERVE_STATIC_FILES
+        value: true
       - key: RAILS_MASTER_KEY
         sync: false
       - key: ADMIN_EMAIL
@@ -15,7 +24,9 @@ services:
         sync: false
       - key: ADMIN_NAME
         value: Administrador
+      - key: ADMIN_DOC
+        value: "000.000.000-00"
     disk:
-      name: storage
+      name: logcell-storage
       mountPath: /app/storage
       sizeGB: 1

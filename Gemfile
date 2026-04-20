@@ -97,6 +97,8 @@ gem "nanoid", "~> 0.1.0"
 # A Ruby wrapper for the Cloudflare API.
 gem "cloudflare", "~> 4.5"
 
+gem "rack-timeout"
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"
