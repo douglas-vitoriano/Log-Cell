@@ -1,0 +1,67 @@
+<section class="lp-hero">
+  <div class="lp-hero-inner">
+    <%= image_tag "logotipo.png", alt: "Log Cell", class: "lp-hero-logo", style:"height: 280px; margin-bottom: -100px; margin-top: -100px;" %>
+    <p class="lp-hero-sub">Acessórios e eletrônicos com o melhor preço</p>
+
+    <div class="lp-cats">
+      <a href="#todos" class="lp-cat active" data-cat="todos">Todos</a>
+      <% @categories.each do |cat| %>
+        <a href="#<%= cat.nanoid %>" class="lp-cat" data-cat="<%= cat.nanoid %>">
+          <%= cat.icon %> <%= cat.name %>
+        </a>
+      <% end %>
+    </div>
+  </div>
+</section>
+
+<section class="lp-products" id="todos">
+  <div class="lp-grid">
+    <% @products.each do |product| %>
+      <div class="lp-card" data-cat="<%= product.category.nanoid %>">
+        <div class="lp-card-img">
+          <% if product.image.attached? %>
+            <%= image_tag product.image, class: "lp-card-photo", alt: product.name %>
+          <% else %>
+            <span class="lp-card-icon"><%= product.category.icon %></span>
+          <% end %>
+        </div>
+        <div class="lp-card-body">
+          <span class="lp-card-cat"><%= product.category.name %></span>
+          <h3 class="lp-card-name"><%= product.name %></h3>
+          <% if product.brand.present? %>
+            <span class="lp-card-brand"><%= product.brand %></span>
+          <% end %>
+          <div class="lp-card-footer">
+            <span class="lp-card-price"><%= product.price.format %></span>
+            <% if product.stock_quantity > 0 %>
+              <span class="lp-card-stock in">Em estoque</span>
+            <% else %>
+              <span class="lp-card-stock out">Sem estoque</span>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @products.empty? %>
+      <div class="lp-empty">
+        <span>📦</span>
+        <p>Nenhum produto disponível no momento.</p>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll('.lp-cat').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault()
+      document.querySelectorAll('.lp-cat').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      const cat = btn.dataset.cat
+      document.querySelectorAll('.lp-card').forEach(card => {
+        card.style.display = (cat === 'todos' || card.dataset.cat === cat) ? 'flex' : 'none'
+      })
+    })
+  })
+</script>

@@ -1,0 +1,71 @@
+pt-BR:
+  trestle:
+    admin:
+      accounts_payable:
+        title: Contas a Pagar
+        new: Nova Conta a Pagar
+      accounts_receivable:
+        title: Contas a Receber
+        new: Nova Conta a Receber
+      sales:
+        title: Vendas
+        new: Nova Venda
+      products:
+        title: Produtos
+        new: Novo Produto
+      customers:
+        title: Clientes
+        new: Novo Cliente
+      suppliers:
+        title: Fornecedores
+        new: Novo Fornecedor
+      categories:
+        title: Categorias
+        new: Nova Categoria
+      movements:
+        title: Movimentações de Estoque
+      users:
+        title: Usuários
+        new: Novo Usuário
+
+    buttons:
+      save: "Salvar %{model}"
+      create: "Criar %{model}"
+      update: "Atualizar %{model}"
+      delete: "Excluir"
+      cancel: "Cancelar"
+      back: "Voltar"
+      new: "Novo %{model}"
+      edit: "Editar"
+      view: "Visualizar"
+      actions: "Ações"
+
+    flash:
+      created: "%{model} criado(a) com sucesso."
+      updated: "%{model} atualizado(a) com sucesso."
+      destroyed: "%{model} excluído(a) com sucesso."
+      error: "Ocorreu um erro ao salvar o registro."
+
+    labels:
+      filter: "Filtrar"
+      search: "Buscar"
+      no_results: "Nenhum registro encontrado."
+      all: "Todos"
+      navigation: "Navegação"
+      per_page: "por página"
+
+    pagination:
+      displaying: "Exibindo <b>%{start}</b> - <b>%{end}</b> de <b>%{total}</b>"
+      empty: "Nenhum registro encontrado"
+      previous: "Anterior"
+      next: "Próximo"
+
+    auth:
+      login:
+        title: "Entrar"
+        username: "E-mail"
+        password: "Senha"
+        submit: "Entrar"
+        remember_me: "Lembrar-me"
+      logout: "Sair"
+      account: "Minha Conta"

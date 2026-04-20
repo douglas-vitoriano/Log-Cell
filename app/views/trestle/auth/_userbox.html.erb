@@ -1,0 +1,74 @@
+<% show_dropdown = (Trestle.config.auth.user_admin && Trestle.lookup(Trestle.config.auth.user_admin)) || Trestle.config.auth.enable_logout %>
+<div class="userbox<% if show_dropdown %> dropdown<% end %>">
+  <% content = capture do %>
+    <div class="avatar">
+      <% if current_user.avatar.attached? %>
+        <%= tag.img(
+          src: Rails.application.routes.url_helpers.rails_blob_path(current_user.avatar, only_path: true)
+        ) %>
+      <% else %>
+        <%= image_tag "https://www.gravatar.com/avatar/#{Digest::MD5.hexdigest(current_user.email.downcase)}?d=mp" %>
+      <% end %>
+    </div>
+    <span class="name<% if show_dropdown %> dropdown-toggle<% end %>">
+      <%= format_user_name(current_user) %>
+    </span>
+  <% end %>
+  <% if show_dropdown %>
+    <%= link_to content, "#", data: { bs_toggle: 'dropdown', bs_offset: "0,7" } %>
+  <% else %>
+    <%= content %>
+  <% end %>
+  <% if show_dropdown -%>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <% if Trestle.config.auth.user_admin && user_admin = Trestle.lookup(Trestle.config.auth.user_admin) -%>
+      <li><%= admin_link_to t("admin.auth.my_account", default: "Minha Conta"), current_user, admin: user_admin, class: "dropdown-item" %></li>
+    <% end -%>
+    <% if Trestle.config.auth.enable_logout -%>
+      <li><%= link_to t("admin.auth.logout", default: "Sair"), trestle.logout_path, class: "dropdown-item" %></li>
+    <% end -%>
+  </ul>
+  <% end %>
+</div>
+<style>
+
+/* ── Userbox ── */
+.userbox {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+}
+
+.userbox > a {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  text-decoration: none !important;
+}
+
+.userbox .avatar {
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(34,211,238,0.5) !important;
+  flex-shrink: 0;
+  order: 1;
+}
+
+.userbox .avatar img {
+  width: 44px !important;
+  height: 44px !important;
+  object-fit: cover !important;
+  border-radius: 50% !important;
+  display: block !important;
+}
+
+.userbox .name {
+  order: 2;
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+}
+
+</style>

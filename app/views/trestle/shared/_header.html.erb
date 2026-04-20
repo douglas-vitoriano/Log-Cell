@@ -1,0 +1,54 @@
+<style>
+  .app-header {
+    background-color: #0f1624 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    padding: 0 20px !important;
+    min-height: 56px;
+  }
+  .app-header .userbox { display: flex; align-items: center; gap: 10px; }
+  .app-header .name {
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .app-header .dropdown-toggle::after { border-top-color: #64748b !important; }
+  .app-header .avatar img {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.14);
+  }
+  .app-header .dropdown-menu {
+    background-color: #162033 !important;
+    border: 1px solid rgba(255,255,255,0.14) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+    padding: 4px !important;
+    min-width: 160px;
+  }
+  .app-header .dropdown-item {
+    color: #94a3b8 !important;
+    border-radius: 5px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  .app-header .dropdown-item:hover,
+  .app-header .dropdown-item:focus {
+    background-color: rgba(34,211,238,0.12) !important;
+    color: #22d3ee !important;
+  }
+</style>
+
+<% if hook?("view.header") %>
+  <header class="app-header">
+    <%= hook("view.header") %>
+  </header>
+<% else %>
+  <header class="app-header">
+    <%= render "trestle/auth/userbox" if defined?(TrestleAuth) %>
+  </header>
+<% end %>

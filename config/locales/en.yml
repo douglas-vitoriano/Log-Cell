@@ -1,0 +1,19 @@
+en:
+  hello: "Hello world"
+
+  activerecord:
+    models:
+      user: { one: User, other: Users }
+      sale: { one: Sale, other: Sales }
+      sale_item: { one: Sale Item, other: Sale Items }
+      product: { one: Product, other: Products }
+      category: { one: Category, other: Categories }
+      customer: { one: Customer, other: Customers }
+      supplier: { one: Supplier, other: Suppliers }
+      movement: { one: Movement, other: Movements }
+      accounts_payable:
+        one: Account Payable
+        other: Accounts Payable
+      accounts_receivable:
+        one: Account Receivable
+        other: Accounts Receivable

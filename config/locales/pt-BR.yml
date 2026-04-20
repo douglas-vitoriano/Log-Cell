@@ -1,0 +1,203 @@
+pt-BR:
+  hello: "Olá mundo"
+
+  activerecord:
+    models:
+      user: { one: Usuário, other: Usuários }
+      sale: { one: Venda, other: Vendas }
+      sale_item: { one: Item, other: Itens }
+      product: { one: Produto, other: Produtos }
+      category: { one: Categoria, other: Categorias }
+      customer: { one: Cliente, other: Clientes }
+      supplier: { one: Fornecedor, other: Fornecedores }
+      movement: { one: Movimentação, other: Movimentações }
+      # ← CORREÇÃO: era account_payable, deve ser accounts_payable
+      accounts_payable:
+        one: Conta a Pagar
+        other: Contas a Pagar
+      accounts_receivable:
+        one: Conta a Receber
+        other: Contas a Receber
+      group: { one: Grupo, other: Grupos }
+      user_assignment: { one: Atribuição, other: Atribuições }
+
+    attributes:
+      user:
+        name: Nome
+        email: E-mail
+        password: Senha
+        password_confirmation: Confirmação de senha
+        phone: Telefone
+        document: Documento
+        civil_status: Estado civil
+        birthday: Data de nascimento
+
+      sale:
+        number: Número
+        sold_at: Data da venda
+        customer: Cliente
+        customer_id: Cliente
+        user: Vendedor
+        total_cents: Total
+        total: Total
+        discount_cents: Desconto
+        discount: Desconto
+        payment_method: Forma de pagamento
+        installments: Parcelas
+        aasm_state: Status
+        notes: Observações
+
+      sale_item:
+        product: Produto
+        product_id: Produto
+        quantity: Quantidade
+        unit_price_cents: Preço unitário
+        unit_price: Preço unitário
+        discount_cents: Desconto
+        discount: Desconto
+
+      product:
+        code: Código
+        name: Nome
+        description: Descrição
+        category: Categoria
+        category_id: Categoria
+        supplier: Fornecedor
+        supplier_id: Fornecedor
+        brand: Marca
+        price_cents: Preço
+        price: Preço
+        cost_cents: Custo
+        cost: Custo
+        stock_quantity: Estoque
+        min_stock: Estoque mínimo
+        barcode: Código de barras
+        location: Localização
+        warranty: Garantia
+        weight_grams: Peso (g)
+        aasm_state: Status
+        margin: Margem
+        stock_status: Situação estoque
+        margin_percent: Margem %
+
+      category:
+        name: Nome
+        description: Descrição
+        icon: Ícone
+        active: Ativo
+        products_count: Produtos
+
+      customer:
+        name: Nome
+        cpf_cnpj: CPF / CNPJ
+        phone: Telefone
+        whatsapp: WhatsApp
+        email: E-mail
+        address: Endereço
+        zip_code: CEP
+        city: Cidade
+        birthday: Aniversário
+        notes: Observações
+        created_at: Cadastrado em
+
+      supplier:
+        company_name: Razão social
+        trading_name: Nome fantasia
+        cnpj: CNPJ
+        contact_name: Contato
+        phone: Telefone
+        email: E-mail
+        city: Cidade
+        state: UF
+        payment_days: Prazo pgto (dias)
+        lead_time: Lead time (dias)
+        notes: Observações
+
+      movement:
+        kind: Tipo
+        quantity: Quantidade
+        cost_cents: Custo
+        cost: Custo
+        reason: Motivo
+        document_ref: Documento
+        product: Produto
+        user: Usuário
+        sale: Venda
+        created_at: Data
+
+      # ← CORREÇÃO: era account_payable, deve ser accounts_payable
+      accounts_payable:
+        document_number: Nº Documento
+        description: Descrição
+        category: Categoria
+        supplier: Fornecedor
+        supplier_id: Fornecedor
+        amount_cents: Valor
+        amount: Valor
+        paid_cents: Pago
+        paid: Pago
+        due_date: Vencimento
+        paid_at: Pago em
+        aasm_state: Status
+        notes: Observações
+        balance: Saldo
+
+      accounts_receivable:
+        document_number: Nº Documento
+        customer: Cliente
+        customer_id: Cliente
+        sale: Venda
+        amount_cents: Valor
+        amount: Valor
+        paid_cents: Pago
+        paid: Pago
+        balance: Saldo
+        due_date: Vencimento
+        paid_at: Pago em
+        interest_rate: Taxa de juros
+        aasm_state: Status
+        notes: Observações
+
+  enumerize:
+    sale:
+      aasm_state:
+        pending: Pendente
+        completed: Concluída
+        cancelled: Cancelada
+      payment_method:
+        cash: Dinheiro
+        pix: PIX
+        debit_card: Cartão de débito
+        credit_card: Cartão de crédito
+        installment: Parcelado
+    product:
+      aasm_state:
+        active: Ativo
+        inactive: Inativo
+        discontinued: Descontinuado
+    movement:
+      kind:
+        entry: Entrada
+        exit: Saída
+        adjustment: Ajuste
+    accounts_payable:
+      aasm_state:
+        open: Aberto
+        paid: Pago
+        overdue: Vencido
+        cancelled: Cancelado
+      category:
+        merchandise: Mercadoria
+        rent: Aluguel
+        salaries: Salários
+        energy: Energia
+        internet: Internet
+        marketing: Marketing
+        accounting: Contabilidade
+        other: Outros
+    accounts_receivable:
+      aasm_state:
+        open: Aberto
+        paid: Pago
+        overdue: Vencido
+        cancelled: Cancelado

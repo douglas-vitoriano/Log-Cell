@@ -1,0 +1,394 @@
+<% products_options = Product.kept.where(aasm_state: :ativo).order(:name).map { |p|
+  ["#{p.code} — #{p.name} (#{p.price.format})", p.id, { data: { price: p.price_cents, code: p.code } }]
+} %>
+
+<style>
+  .sale-items-section { margin-top: 24px; }
+  .sale-items-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 16px; padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.07);
+  }
+  .sale-items-header h5 {
+    margin: 0; color: #f1f5f9;
+    font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+  }
+  .barcode-row {
+    display: flex; gap: 8px; margin-bottom: 16px; align-items: flex-end;
+  }
+  .barcode-row .form-group { margin: 0; flex: 1; }
+  .barcode-row label {
+    color: #94a3b8; font-size: 11px; font-weight: 600;
+    letter-spacing: 0.4px; display: block; margin-bottom: 4px;
+  }
+  .item-cols {
+    display: grid;
+    grid-template-columns: 3fr 80px 110px 90px 80px 32px;
+    gap: 6px; align-items: end; margin-bottom: 4px;
+  }
+  .item-cols-header {
+    display: grid;
+    grid-template-columns: 3fr 80px 110px 90px 80px 32px;
+    gap: 6px; margin-bottom: 4px;
+  }
+  .item-cols-header span {
+    color: #64748b; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.8px; text-transform: uppercase;
+  }
+  .sale-item-row {
+    padding: 10px 12px; background: #162033;
+    border-radius: 8px; border: 1px solid rgba(255,255,255,0.07);
+    margin-bottom: 6px;
+  }
+  .item-total-row {
+    text-align: right; margin-top: 14px; padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    font-size: 14px; color: #f1f5f9; font-family: monospace;
+  }
+  .suggestion-item:last-child { border-bottom: none !important; }
+</style>
+
+<div class="sale-items-section">
+  <div class="sale-items-header">
+    <button type="button" id="add-sale-item" class="btn btn-sm btn-primary">
+      + Adicionar linha
+    </button>
+  </div>
+
+  <%# ── Busca por código de barras / nome ── %>
+  <div class="barcode-row">
+    <div class="form-group" style="position:relative;">
+      <label>Código de barras, código ou nome do produto</label>
+      <div class="input-group">
+        <input type="text" id="barcode-input" class="form-control"
+          placeholder="Escaneie, digite o código ou nome e pressione Enter…"
+          autocomplete="off">
+        <button type="button" id="barcode-search-btn" class="btn btn-secondary">
+          Buscar
+        </button>
+      </div>
+      <small id="barcode-feedback" style="color:#64748b; font-size:11px; margin-top:3px; display:block;"></small>
+      <div id="product-suggestions" style="
+        display:none; position:absolute; z-index:1000; width:100%;
+        background:#162033; border:1px solid rgba(255,255,255,0.14);
+        border-radius:8px; margin-top:2px; max-height:220px; overflow-y:auto;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      "></div>
+    </div>
+  </div>
+
+  <%# ── Cabeçalho das colunas ── %>
+  <div class="item-cols-header">
+    <span>Produto</span>
+    <span>Qtd</span>
+    <span>Preço (R$)</span>
+    <span>Desconto</span>
+    <span>Total</span>
+    <span></span>
+  </div>
+
+  <%# ── Itens existentes ── %>
+  <div id="sale-items-container">
+    <% sale.sale_items.each_with_index do |item, index| %>
+      <div class="sale-item-row">
+        <div class="item-cols">
+          <div>
+            <input type="hidden" name="sale[sale_items_attributes][<%= index %>][id]" value="<%= item.id %>">
+            <input type="hidden" class="destroy-field" name="sale[sale_items_attributes][<%= index %>][_destroy]" value="0">
+            <%= select_tag "sale[sale_items_attributes][#{index}][product_id]",
+              options_for_select(products_options, item.product_id),
+              class: "form-control product-select",
+              include_blank: "Selecione o produto…" %>
+          </div>
+          <input type="number"
+            name="sale[sale_items_attributes][<%= index %>][quantity]"
+            value="<%= item.quantity %>" min="1" step="1"
+            class="form-control item-quantity" placeholder="Qtd">
+          <input type="number"
+            name="sale[sale_items_attributes][<%= index %>][unit_price_cents]"
+            value="<%= item.unit_price_cents %>" min="0"
+            class="form-control item-price" placeholder="Ex: 1990">
+          <input type="number"
+            name="sale[sale_items_attributes][<%= index %>][discount_cents]"
+            value="<%= item.discount_cents %>" min="0"
+            class="form-control item-discount" placeholder="0">
+          <div class="item-total"
+            style="color:#34d399; font-family:monospace; font-size:12px; display:flex; align-items:center;">
+            <%= Money.new(item.total_cents, "BRL").format %>
+          </div>
+          <button type="button" class="btn btn-sm btn-danger remove-item">✕</button>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="item-total-row">
+    Total bruto: <strong class="total-value">R$ 0,00</strong>
+  </div>
+</div>
+
+<%# ── Template para novas linhas ── %>
+<template id="sale-item-template">
+  <div class="sale-item-row">
+    <div class="item-cols">
+      <div>
+        <input type="hidden" class="destroy-field"
+          name="sale[sale_items_attributes][NEW_INDEX][_destroy]" value="0">
+        <%= select_tag "sale[sale_items_attributes][NEW_INDEX][product_id]",
+          options_for_select(products_options),
+          class: "form-control product-select",
+          include_blank: "Selecione o produto…" %>
+      </div>
+      <input type="number"
+        name="sale[sale_items_attributes][NEW_INDEX][quantity]"
+        value="1" min="1" step="1"
+        class="form-control item-quantity" placeholder="Qtd">
+      <input type="number"
+        name="sale[sale_items_attributes][NEW_INDEX][unit_price_cents]"
+        value="0" min="0"
+        class="form-control item-price" placeholder="Ex: 1990">
+      <input type="number"
+        name="sale[sale_items_attributes][NEW_INDEX][discount_cents]"
+        value="0" min="0"
+        class="form-control item-discount" placeholder="0">
+      <div class="item-total"
+        style="color:#34d399; font-family:monospace; font-size:12px; display:flex; align-items:center;">
+        R$ 0,00
+      </div>
+      <button type="button" class="btn btn-sm btn-danger remove-item">✕</button>
+    </div>
+  </div>
+</template>
+
+<script>
+(function() {
+  let itemIndex = <%= sale.sale_items.size %>;
+
+  const productsData = <%= raw Product.kept.where(aasm_state: :ativo)
+    .map { |p| { id: p.id, name: p.name, code: p.code, barcode: p.barcode, price: p.price_cents } }
+    .to_json %>;
+
+  function formatBRL(cents) {
+    return 'R$ ' + (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  }
+
+  function updateRowTotal(row) {
+    const qty   = parseFloat(row.querySelector('.item-quantity')?.value) || 0;
+    const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+    const disc  = parseFloat(row.querySelector('.item-discount')?.value) || 0;
+    const total = Math.max((qty * price) - disc, 0);
+    const el = row.querySelector('.item-total');
+    if (el) el.textContent = formatBRL(total);
+    updateGrandTotal();
+  }
+
+  function updateGrandTotal() {
+    let grand = 0;
+    document.querySelectorAll('#sale-items-container .sale-item-row').forEach(row => {
+      if (row.querySelector('.destroy-field')?.value === '1') return;
+      const qty   = parseFloat(row.querySelector('.item-quantity')?.value) || 0;
+      const price = parseFloat(row.querySelector('.item-price')?.value) || 0;
+      const disc  = parseFloat(row.querySelector('.item-discount')?.value) || 0;
+      grand += Math.max((qty * price) - disc, 0);
+    });
+    const el = document.querySelector('.total-value');
+    if (el) el.textContent = formatBRL(grand);
+  }
+
+  function bindRow(row) {
+    row.querySelector('.product-select')?.addEventListener('change', function() {
+      const opt = this.options[this.selectedIndex];
+      const price = opt?.dataset?.price;
+      if (price) {
+        row.querySelector('.item-price').value = price;
+        updateRowTotal(row);
+      }
+    });
+
+    row.querySelectorAll('.item-quantity, .item-price, .item-discount').forEach(input => {
+      input.addEventListener('input', () => updateRowTotal(row));
+    });
+
+    row.querySelector('.remove-item')?.addEventListener('click', function() {
+      const destroyField = row.querySelector('.destroy-field');
+      const hasId = row.querySelector('input[name*="[id]"]');
+      if (hasId) {
+        destroyField.value = '1';
+        row.style.display = 'none';
+      } else {
+        row.remove();
+      }
+      updateGrandTotal();
+    });
+  }
+
+  function addProductRow(product) {
+    const template = document.getElementById('sale-item-template');
+    const clone = template.content.cloneNode(true);
+    const row = clone.querySelector('.sale-item-row');
+    row.innerHTML = row.innerHTML.replace(/NEW_INDEX/g, itemIndex++);
+
+    const select = row.querySelector('.product-select');
+    if (select && product) {
+      select.value = product.id;
+      row.querySelector('.item-price').value = product.price;
+    }
+
+    document.getElementById('sale-items-container').appendChild(row);
+    bindRow(row);
+    updateGrandTotal();
+  }
+
+  // ── Busca exata por código ou barcode ──
+  function searchExact(query) {
+    const q = query.trim().toLowerCase();
+    return productsData.find(p =>
+      (p.barcode && p.barcode.toLowerCase() === q) ||
+      p.code.toLowerCase() === q
+    );
+  }
+
+  // ── Busca parcial por nome, código ou barcode ──
+  function searchByName(query) {
+    const q = query.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return productsData.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.code.toLowerCase().includes(q) ||
+      (p.barcode && p.barcode.toLowerCase().includes(q))
+    ).slice(0, 8);
+  }
+
+  const barcodeInput    = document.getElementById('barcode-input');
+  const barcodeFeedback = document.getElementById('barcode-feedback');
+  const suggestions     = document.getElementById('product-suggestions');
+
+  function hideSuggestions() {
+    suggestions.style.display = 'none';
+    suggestions.innerHTML = '';
+  }
+
+  function showSuggestions(results) {
+    if (!results.length) { hideSuggestions(); return; }
+
+    suggestions.innerHTML = results.map(p => `
+      <div class="suggestion-item" data-id="${p.id}" style="
+        padding: 10px 14px; cursor: pointer;
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        display: flex; justify-content: space-between; align-items: center;
+        font-size: 13px; color: #cbd5e1;
+      ">
+        <div>
+          <strong style="color:#f1f5f9;">${p.name}</strong>
+          <small style="color:#64748b; display:block;">
+            ${p.code}${p.barcode ? ' · ' + p.barcode : ''}
+          </small>
+        </div>
+        <span style="color:#34d399; font-family:monospace; font-size:12px; margin-left:12px;">
+          ${formatBRL(p.price)}
+        </span>
+      </div>
+    `).join('');
+
+    suggestions.style.display = 'block';
+
+    suggestions.querySelectorAll('.suggestion-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        item.style.background = 'rgba(34,211,238,0.08)';
+      });
+      item.addEventListener('mouseleave', () => {
+        item.style.background = 'transparent';
+      });
+      item.addEventListener('click', () => {
+        const product = productsData.find(p => p.id === item.dataset.id);
+        if (product) {
+          addProductRow(product);
+          barcodeFeedback.textContent = '✅ ' + product.name + ' adicionado';
+          barcodeFeedback.style.color = '#34d399';
+          barcodeInput.value = '';
+          hideSuggestions();
+          setTimeout(() => { barcodeFeedback.textContent = ''; }, 2000);
+        }
+      });
+    });
+  }
+
+  function handleBarcodeSearch() {
+    const q = barcodeInput.value.trim();
+    if (!q) return;
+
+    // Tenta busca exata primeiro (código ou barcode)
+    const exact = searchExact(q);
+    if (exact) {
+      addProductRow(exact);
+      barcodeFeedback.textContent = '✅ ' + exact.name + ' adicionado';
+      barcodeFeedback.style.color = '#34d399';
+      barcodeInput.value = '';
+      hideSuggestions();
+      setTimeout(() => { barcodeFeedback.textContent = ''; }, 2000);
+      return;
+    }
+
+    // Busca parcial por nome
+    const results = searchByName(q);
+    if (results.length === 1) {
+      addProductRow(results[0]);
+      barcodeFeedback.textContent = '✅ ' + results[0].name + ' adicionado';
+      barcodeFeedback.style.color = '#34d399';
+      barcodeInput.value = '';
+      hideSuggestions();
+      setTimeout(() => { barcodeFeedback.textContent = ''; }, 2000);
+    } else if (results.length > 1) {
+      showSuggestions(results);
+      barcodeFeedback.textContent = results.length + ' produtos encontrados — selecione um';
+      barcodeFeedback.style.color = '#fbbf24';
+    } else {
+      hideSuggestions();
+      barcodeFeedback.textContent = '❌ Produto não encontrado';
+      barcodeFeedback.style.color = '#f87171';
+    }
+  }
+
+  // Sugestões em tempo real ao digitar
+  let searchTimeout;
+  barcodeInput?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const q = this.value.trim();
+    if (q.length < 2) { hideSuggestions(); return; }
+    searchTimeout = setTimeout(() => {
+      const exact = searchExact(q);
+      if (!exact) showSuggestions(searchByName(q));
+      else hideSuggestions();
+    }, 200);
+  });
+
+  barcodeInput?.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleBarcodeSearch();
+    }
+    if (e.key === 'Escape') {
+      hideSuggestions();
+    }
+  });
+
+  document.getElementById('barcode-search-btn')?.addEventListener('click', handleBarcodeSearch);
+
+  // Fecha sugestões ao clicar fora
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#barcode-input') && !e.target.closest('#product-suggestions')) {
+      hideSuggestions();
+    }
+  });
+
+  // Adicionar linha em branco
+  document.getElementById('add-sale-item')?.addEventListener('click', function() {
+    addProductRow(null);
+  });
+
+  // Bind nas linhas já existentes
+  document.querySelectorAll('#sale-items-container .sale-item-row').forEach(bindRow);
+
+  updateGrandTotal();
+})();
+</script>

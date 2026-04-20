@@ -1,0 +1,11 @@
+pt-BR:
+  sidebar:
+    user: "Administradores"
+    payable: "Contas a pagar"
+    receivable: "Contas a receber"
+    categories: "Categorias"
+    customers: "Clientes"
+    movements: "Movimentações"
+    products: "Produtos"
+    sales: "Vendas"
+    suppliers: "Fornecedores"

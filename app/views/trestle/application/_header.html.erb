@@ -1,0 +1,92 @@
+<style>
+  .content-header {
+    background-color: #0f1624 !important;
+    border-bottom: 1px solid rgba(255,255,255,0.07) !important;
+    padding: 0 24px !important;
+    min-height: 80px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: 0;
+  }
+
+  .content-header-title {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-height: 80px;
+  }
+
+  .content-header-title h1 {
+    color: #f1f5f9 !important;
+    font-family: 'Syne', sans-serif !important;
+    font-size: 20px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+  }
+
+  .content-header-toolbars {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 80px;
+  }
+
+  .content-header-breadcrumbs {
+    width: 100%;
+    padding: 0 0 12px 0;
+  }
+  .breadcrumb { background: transparent !important; padding: 4px 0 0 !important; margin: 0 !important; }
+  .breadcrumb-item a { color: #64748b !important; font-size: 12px !important; text-decoration: none; }
+  .breadcrumb-item a:hover { color: #22d3ee !important; }
+  .breadcrumb-item.active { color: #94a3b8 !important; font-size: 12px; }
+  .breadcrumb-item + .breadcrumb-item::before { color: #64748b !important; }
+  .btn-new-resource {
+    background-color: #22d3ee !important;
+    border-color: #22d3ee !important;
+    color: #08111f !important;
+    font-weight: 700 !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+  }
+  .btn-new-resource:hover { background-color: #0891b2 !important; border-color: #0891b2 !important; color: #fff !important; }
+  .btn-toolbar .btn-light, .btn-toolbar .btn-secondary, .btn-toolbar .btn-default {
+    background-color: #162033 !important;
+    border-color: rgba(255,255,255,0.14) !important;
+    color: #94a3b8 !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
+  }
+  .btn-toolbar .btn-light:hover { background-color: #1e2d45 !important; color: #f1f5f9 !important; }
+  .btn-toolbar .btn-danger { background-color: #f87171 !important; border-color: #f87171 !important; color: #fff !important; font-weight: 700 !important; border-radius: 7px !important; }
+</style>
+
+<header class="content-header">
+  <div class="content-header-title">
+    <h1><%= title %></h1>
+  </div>
+
+  <div class="content-header-toolbars">
+    <div class="btn-toolbar primary-toolbar" role="toolbar">
+      <%= render_toolbar(toolbar(:primary)) %>
+      <%= deprecated_toolbar(:primary) %>
+    </div>
+
+    <div class="btn-toolbar secondary-toolbar" role="toolbar">
+      <%= render_toolbar(toolbar(:secondary)) %>
+      <%= deprecated_toolbar(:secondary) %>
+    </div>
+  </div>
+
+  <% unless local_assigns.fetch(:hide_breadcrumbs, false) %>
+    <div class="content-header-breadcrumbs">
+      <ol class="breadcrumb">
+        <% breadcrumbs.each do |breadcrumb| %>
+          <li class="breadcrumb-item<% if breadcrumb == breadcrumbs.last %> active<% end %>">
+            <%= link_to breadcrumb.label, breadcrumb.path, data: { turbo_frame: "_top" } %>
+          </li>
+        <% end %>
+      </ol>
+    </div>
+  <% end %>
+</header>

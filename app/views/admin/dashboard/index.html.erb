@@ -1,0 +1,505 @@
+<%
+  #
+  # ─── CONFIGURAÇÃO DE PERÍODO ────────────────────────────────────────
+  #
+  today       = Date.current
+  start_month = today.beginning_of_month
+  prev_start  = (today - 1.month).beginning_of_month
+  prev_end    = (today - 1.month).end_of_month
+
+  #
+  # ─── KPIs ───────────────────────────────────────────────────────────
+  #
+  today_sales = Sale.where(sold_at: today)
+  month_sales = Sale.where(sold_at: start_month..today)
+
+  # Compatível com SQLite e PostgreSQL
+  today_rev    = today_sales.sum("total_cents - discount_cents").to_i
+  today_count  = today_sales.count
+  month_rev    = month_sales.sum("total_cents - discount_cents").to_i
+  month_count  = month_sales.count
+  ticket_medio = month_count > 0 ? (month_rev.to_f / month_count).round : 0
+
+  prev_rev     = Sale.where(sold_at: prev_start..prev_end).sum("total_cents - discount_cents").to_i
+  month_growth = prev_rev > 0 ? ((month_rev - prev_rev).to_f / prev_rev * 100).round(1) : 0.0
+
+  critical_count = Product.kept.where(stock_quantity: 0).count
+  low_count      = Product.kept.where("stock_quantity > 0 AND stock_quantity < min_stock").count
+
+  recv_open    = AccountsReceivable.where(aasm_state: %w[open overdue])
+                                   .sum("amount_cents - paid_cents").to_i
+  recv_overdue = AccountsReceivable.where(aasm_state: "overdue").count
+  pay_open     = AccountsPayable.where(aasm_state: %w[open overdue])
+                                .sum("amount_cents - paid_cents").to_i
+  pay_overdue  = AccountsPayable.where(aasm_state: "overdue").count
+
+  #
+  # ─── GRÁFICO: VENDAS 7 DIAS ─────────────────────────────────────────
+  #
+  chart_labels  = []
+  chart_revenue = []
+  chart_counts  = []
+
+  (6.days.ago.to_date..today).each do |date|
+    s = Sale.where(sold_at: date)
+    chart_labels  << date.strftime("%-d/%m")
+    chart_revenue << (s.sum("total_cents - discount_cents").to_f / 100).round(2)
+    chart_counts  << s.count
+  end
+
+  #
+  # ─── GRÁFICO: TOP 5 PRODUTOS ────────────────────────────────────────
+  # Compatível com SQLite (sem ::integer cast)
+  #
+  top_products = SaleItem
+    .joins(:sale, :product)
+    .where(sales: { sold_at: start_month..today })
+    .group("products.name")
+    .order(Arel.sql("SUM(sale_items.quantity) DESC"))
+    .limit(5)
+    .pluck(Arel.sql("products.name, SUM(sale_items.quantity)"))
+    .map { |name, qty| [name, qty.to_i] }
+
+  #
+  # ─── TABELAS ────────────────────────────────────────────────────────
+  #
+  recent_sales = Sale.includes(:customer, :user).order(created_at: :desc).limit(8)
+  stock_alerts = Product.kept.includes(:category)
+                        .where("stock_quantity < min_stock")
+                        .order(:stock_quantity)
+                        .limit(8)
+%>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@500;700;800&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap');
+
+.lc {
+  --bg:     #080d17;
+  --sf:     #0f1624;
+  --sf2:    #162033;
+  --bd:     rgba(255,255,255,0.07);
+  --bd2:    rgba(255,255,255,0.13);
+  --cy:     #22d3ee;  --cy-d: rgba(34,211,238,0.12);
+  --gr:     #34d399;  --gr-d: rgba(52,211,153,0.12);
+  --am:     #fbbf24;  --am-d: rgba(251,191,36,0.12);
+  --rd:     #f87171;  --rd-d: rgba(248,113,113,0.12);
+  --pu:     #a78bfa;  --pu-d: rgba(167,139,250,0.12);
+  --tx:     #f1f5f9;
+  --mu:     #64748b;
+  --sb:     #334155;
+  --r:      12px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  background: var(--bg);
+  min-height: 100vh;
+  margin: -20px -24px;
+  padding: 24px 28px;
+  color: var(--tx);
+}
+
+.lc-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+.lc-hdr-l { display:flex; align-items:center; gap:12px; }
+.lc-logo {
+  width:38px; height:38px; border-radius:9px;
+  background:linear-gradient(135deg,#22d3ee,#0891b2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Syne',sans-serif; font-weight:800; font-size:14px; color:#fff;
+}
+.lc-site-name { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; letter-spacing:-.3px; }
+.lc-site-sub  { font-size:12px; color:var(--mu); margin-top:2px; }
+.lc-chip {
+  display:flex; align-items:center; gap:6px;
+  padding:6px 12px; background:var(--sf);
+  border:1px solid var(--bd); border-radius:8px;
+  font-size:12px; color:var(--mu); font-family:'JetBrains Mono',monospace;
+}
+.lc-live { width:6px; height:6px; border-radius:50%; background:var(--gr); animation:lc-pulse 2s infinite; }
+@keyframes lc-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+.lc-sec {
+  font-size:10px; font-weight:600; letter-spacing:1px;
+  text-transform:uppercase; color:var(--mu);
+  margin-bottom:12px; display:flex; align-items:center; gap:8px;
+}
+.lc-sec::after { content:''; flex:1; height:1px; background:var(--bd); }
+
+.lc-kpis { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; margin-bottom:20px; }
+.lc-kpi {
+  background:var(--sf); border:1px solid var(--bd); border-radius:var(--r);
+  padding:18px 20px; position:relative; overflow:hidden;
+  transition:border-color .2s,transform .2s; cursor:default;
+}
+.lc-kpi:hover { border-color:var(--bd2); transform:translateY(-1px); }
+.lc-kpi::before {
+  content:''; position:absolute; top:0; left:0; right:0;
+  height:2px; border-radius:var(--r) var(--r) 0 0;
+}
+.lc-kpi.cy::before{background:var(--cy)} .lc-kpi.gr::before{background:var(--gr)}
+.lc-kpi.am::before{background:var(--am)} .lc-kpi.rd::before{background:var(--rd)}
+.lc-kpi.pu::before{background:var(--pu)}
+
+.lc-ico { width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; margin-bottom:14px; }
+.lc-kpi.cy .lc-ico{background:var(--cy-d)} .lc-kpi.gr .lc-ico{background:var(--gr-d)}
+.lc-kpi.am .lc-ico{background:var(--am-d)} .lc-kpi.rd .lc-ico{background:var(--rd-d)}
+.lc-kpi.pu .lc-ico{background:var(--pu-d)}
+
+.lc-kpi-lbl { font-size:10px; font-weight:600; letter-spacing:.8px; text-transform:uppercase; color:var(--mu); margin-bottom:6px; }
+.lc-kpi-val { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:600; color:var(--tx); line-height:1; margin-bottom:8px; }
+.lc-kpi-meta { display:flex; align-items:center; gap:5px; flex-wrap:wrap; }
+.lc-badge { font-size:10px; font-weight:600; padding:2px 6px; border-radius:4px; font-family:'JetBrains Mono',monospace; }
+.lc-badge.up{background:var(--gr-d);color:var(--gr)} .lc-badge.dn{background:var(--rd-d);color:var(--rd)}
+.lc-badge.wn{background:var(--am-d);color:var(--am)} .lc-badge.nf{background:var(--cy-d);color:var(--cy)}
+.lc-meta-txt { font-size:10px; color:var(--mu); }
+
+.lc-card { background:var(--sf); border:1px solid var(--bd); border-radius:var(--r); padding:20px 22px; }
+.lc-card-hdr { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.lc-card-ttl { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; letter-spacing:-.2px; }
+.lc-card-sub { font-size:11px; color:var(--mu); margin-top:2px; }
+.lc-period {
+  font-size:10px; font-weight:600; font-family:'JetBrains Mono',monospace;
+  padding:3px 8px; border-radius:6px; background:var(--sf2); border:1px solid var(--bd); color:var(--mu);
+}
+.lc-link { font-size:12px; color:var(--cy); text-decoration:none; opacity:.8; transition:opacity .15s; }
+.lc-link:hover { opacity:1; }
+
+.lc-charts { display:grid; grid-template-columns:1fr 380px; gap:14px; margin-bottom:18px; }
+.lc-legend { display:flex; gap:16px; margin-top:10px; font-size:11px; color:var(--mu); }
+.lc-legend span { display:flex; align-items:center; gap:5px; }
+.lc-dot-sq { width:10px; height:10px; border-radius:2px; display:inline-block; }
+.lc-dot-ln { width:14px; height:2px; display:inline-block; }
+
+.lc-bottom { display:grid; grid-template-columns:1fr 360px; gap:14px; }
+
+.lc-tbl { width:100%; border-collapse:collapse; font-size:12px; }
+.lc-tbl th {
+  text-align:left; font-size:10px; font-weight:600; letter-spacing:.8px;
+  text-transform:uppercase; color:var(--mu); padding:0 10px 10px 0; border-bottom:1px solid var(--bd);
+}
+.lc-tbl td { padding:10px 10px 10px 0; border-bottom:1px solid var(--bd); vertical-align:middle; }
+.lc-tbl tr:last-child td { border-bottom:none; }
+.lc-tbl tr:hover td { background:rgba(255,255,255,.015); }
+.lc-tbl-wrap { max-height:320px; overflow-y:auto; }
+.lc-tbl-wrap::-webkit-scrollbar{width:4px} .lc-tbl-wrap::-webkit-scrollbar-track{background:transparent}
+.lc-tbl-wrap::-webkit-scrollbar-thumb{background:var(--sb);border-radius:2px}
+
+.lc-state { display:inline-flex; align-items:center; gap:3px; padding:3px 7px; border-radius:5px; font-size:10px; font-weight:600; font-family:'JetBrains Mono',monospace; }
+.lc-state.completed{background:var(--gr-d);color:var(--gr)} .lc-state.pending{background:var(--am-d);color:var(--am)}
+.lc-state.cancelled{background:var(--rd-d);color:var(--rd)}
+.lc-num { font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--cy); }
+.lc-val { font-family:'JetBrains Mono',monospace; font-weight:600; font-size:12px; color:var(--gr); }
+
+.lc-sk-item { display:flex; align-items:center; padding:10px 0; border-bottom:1px solid var(--bd); }
+.lc-sk-item:last-child { border-bottom:none; }
+.lc-sk-name { font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
+.lc-sk-cat  { font-size:10px; color:var(--mu); }
+.lc-sk-trk  { flex:1; margin:0 12px; height:3px; background:var(--sf2); border-radius:2px; overflow:hidden; }
+.lc-sk-bar  { height:100%; border-radius:2px; }
+.lc-sk-qty  { font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:600; white-space:nowrap; min-width:44px; text-align:right; }
+
+.lc-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:180px; gap:8px; color:var(--mu); font-size:13px; }
+
+@media (max-width:1200px) {
+  .lc-kpis   { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .lc-charts { grid-template-columns:1fr; }
+  .lc-bottom { grid-template-columns:1fr; }
+}
+</style>
+
+<div class="lc">
+
+  <%# ─── HEADER ── %>
+  <div class="lc-hdr">
+    <div class="lc-hdr-l">
+      <div class="lc-logo">LC</div>
+      <div>
+        <div class="lc-site-name">Log Cell</div>
+        <div class="lc-site-sub">Painel de controle operacional</div>
+      </div>
+    </div>
+    <div class="lc-chip">
+      <span class="lc-live"></span>
+      <%= today.strftime("%-d de %B de %Y") %>
+    </div>
+  </div>
+
+  <%# ─── KPIs ── %>
+  <div class="lc-sec">Indicadores do período</div>
+  <div class="lc-kpis">
+
+    <div class="lc-kpi cy">
+      <div class="lc-ico">🛒</div>
+      <div class="lc-kpi-lbl">Vendas Hoje</div>
+      <div class="lc-kpi-val"><%= Money.new(today_rev, "BRL").format %></div>
+      <div class="lc-kpi-meta">
+        <span class="lc-badge nf"><%= today_count %> venda<%= today_count != 1 ? "s" : "" %></span>
+      </div>
+    </div>
+
+    <div class="lc-kpi gr">
+      <div class="lc-ico">📈</div>
+      <div class="lc-kpi-lbl">Receita do Mês</div>
+      <div class="lc-kpi-val"><%= Money.new(month_rev, "BRL").format %></div>
+      <div class="lc-kpi-meta">
+        <% if month_growth >= 0 %>
+          <span class="lc-badge up">+<%= month_growth %>%</span>
+        <% else %>
+          <span class="lc-badge dn"><%= month_growth %>%</span>
+        <% end %>
+        <span class="lc-meta-txt">vs. mês anterior</span>
+      </div>
+    </div>
+
+    <div class="lc-kpi pu">
+      <div class="lc-ico">🎯</div>
+      <div class="lc-kpi-lbl">Ticket Médio</div>
+      <div class="lc-kpi-val"><%= Money.new(ticket_medio, "BRL").format %></div>
+      <div class="lc-kpi-meta">
+        <span class="lc-badge nf"><%= month_count %> vendas no mês</span>
+      </div>
+    </div>
+
+    <div class="lc-kpi <%= recv_overdue > 0 ? "am" : "gr" %>">
+      <div class="lc-ico">💰</div>
+      <div class="lc-kpi-lbl">A Receber</div>
+      <div class="lc-kpi-val"><%= Money.new(recv_open, "BRL").format %></div>
+      <div class="lc-kpi-meta">
+        <% if recv_overdue > 0 %>
+          <span class="lc-badge wn"><%= recv_overdue %> vencido<%= recv_overdue != 1 ? "s" : "" %></span>
+        <% else %>
+          <span class="lc-badge up">Em dia</span>
+        <% end %>
+      </div>
+    </div>
+
+    <% stock_color = critical_count > 0 ? "rd" : (low_count > 0 ? "am" : "gr") %>
+    <div class="lc-kpi <%= stock_color %>">
+      <div class="lc-ico">📦</div>
+      <div class="lc-kpi-lbl">Estoque</div>
+      <div class="lc-kpi-val"><%= critical_count + low_count %></div>
+      <div class="lc-kpi-meta">
+        <% if critical_count > 0 %>
+          <span class="lc-badge dn"><%= critical_count %> zerado<%= critical_count != 1 ? "s" : "" %></span>
+        <% end %>
+        <% if low_count > 0 %>
+          <span class="lc-badge wn"><%= low_count %> baixo</span>
+        <% end %>
+        <% if critical_count.zero? && low_count.zero? %>
+          <span class="lc-badge up">Normal</span>
+        <% end %>
+      </div>
+    </div>
+
+  </div>
+
+  <%# ─── CHARTS ── %>
+  <div class="lc-sec">Análise de vendas</div>
+  <div class="lc-charts">
+
+    <div class="lc-card">
+      <div class="lc-card-hdr">
+        <div>
+          <div class="lc-card-ttl">Vendas — Últimos 7 Dias</div>
+          <div class="lc-card-sub">Receita diária e volume de transações</div>
+        </div>
+        <span class="lc-period">7D</span>
+      </div>
+      <div style="position:relative;height:220px">
+        <canvas id="lc-sales-chart"></canvas>
+      </div>
+      <div class="lc-legend">
+        <span><span class="lc-dot-sq" style="background:#22d3ee"></span> Receita (R$)</span>
+        <span><span class="lc-dot-ln" style="background:#34d399"></span> Vendas</span>
+      </div>
+    </div>
+
+    <div class="lc-card">
+      <div class="lc-card-hdr">
+        <div>
+          <div class="lc-card-ttl">Top Produtos</div>
+          <div class="lc-card-sub">Mais vendidos este mês</div>
+        </div>
+        <span class="lc-period">30D</span>
+      </div>
+      <% if top_products.any? %>
+        <div style="position:relative;height:<%= [top_products.length * 48 + 20, 220].max %>px">
+          <canvas id="lc-top-chart"></canvas>
+        </div>
+      <% else %>
+        <div class="lc-empty">
+          <span style="font-size:28px">📊</span>
+          Nenhuma venda no período
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+
+  <%# ─── BOTTOM ── %>
+  <div class="lc-sec">Operações recentes</div>
+  <div class="lc-bottom">
+
+    <div class="lc-card">
+      <div class="lc-card-hdr">
+        <div>
+          <div class="lc-card-ttl">Últimas Vendas</div>
+          <div class="lc-card-sub">8 transações mais recentes</div>
+        </div>
+        <%= link_to "Ver todas →", "/admin/sales", class: "lc-link" %>
+      </div>
+      <div class="lc-tbl-wrap">
+        <table class="lc-tbl">
+          <thead>
+            <tr>
+              <th>Número</th><th>Cliente</th><th>Data</th><th>Total</th><th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% if recent_sales.any? %>
+              <% recent_sales.each do |sale| %>
+                <tr>
+                  <td><span class="lc-num"><%= sale.number %></span></td>
+                  <td style="color:#94a3b8;font-size:12px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    <%= sale.customer&.name || "Balcão" %>
+                  </td>
+                  <td style="color:var(--mu);font-size:11px;font-family:'JetBrains Mono',monospace;">
+                    <%= sale.sold_at.strftime("%d/%m/%y") %>
+                  </td>
+                  <td class="lc-val"><%= Money.new(sale.net_total_cents, "BRL").format %></td>
+                </tr>
+              <% end %>
+            <% else %>
+              <tr>
+                <td colspan="5" style="text-align:center;color:var(--mu);padding:24px 0;">
+                  Nenhuma venda registrada
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="lc-card">
+      <div class="lc-card-hdr">
+        <div>
+          <div class="lc-card-ttl">Alertas de Estoque</div>
+          <div class="lc-card-sub">Produtos abaixo do mínimo</div>
+        </div>
+        <%= link_to "Ver →", "/admin/products", class: "lc-link" %>
+      </div>
+      <% if stock_alerts.any? %>
+        <div class="lc-tbl-wrap">
+          <% stock_alerts.each do |product| %>
+            <% pct   = product.min_stock.to_f > 0 ? [(product.stock_quantity.to_f / product.min_stock.to_f * 100).round, 100].min : 0 %>
+            <% color = product.stock_quantity.zero? ? "var(--rd)" : (pct < 50 ? "var(--am)" : "var(--gr)") %>
+            <div class="lc-sk-item">
+              <div style="flex:1;min-width:0">
+                <div class="lc-sk-name"><%= product.name %></div>
+                <div class="lc-sk-cat"><%= product.category&.name %></div>
+                <div class="lc-sk-trk" style="margin-top:5px;margin-left:0">
+                  <div class="lc-sk-bar" style="width:<%= pct %>%;background:<%= color %>"></div>
+                </div>
+              </div>
+              <div class="lc-sk-qty" style="color:<%= color %>;margin-left:14px;">
+                <%= product.stock_quantity.to_i %>
+                <span style="color:var(--mu);font-weight:400">/<%= product.min_stock.to_i %></span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <div class="lc-empty">
+          <span style="font-size:28px">✅</span>
+          Estoque em ordem
+        </div>
+      <% end %>
+    </div>
+
+  </div>
+
+</div>
+
+<%# ─── CHART.JS ── %>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+(function() {
+  const BD = 'rgba(255,255,255,0.07)', TX = '#f1f5f9', MU = '#64748b', CY = '#22d3ee', GR = '#34d399', AM = '#fbbf24';
+  const tooltipDefaults = {
+    backgroundColor:'#0f1624', borderColor:'rgba(255,255,255,0.1)', borderWidth:1,
+    titleColor:TX, bodyColor:MU, padding:10, cornerRadius:8,
+  };
+  const monoFont = { family:"'JetBrains Mono'" };
+
+  // ── Gráfico 7 dias ────────────────────────────────────
+  const salesCtx = document.getElementById('lc-sales-chart');
+  if (salesCtx) {
+    new Chart(salesCtx, {
+      data: {
+        labels: <%= raw chart_labels.to_json %>,
+        datasets: [
+          {
+            type:'bar', label:'Receita (R$)',
+            data:<%= raw chart_revenue.to_json %>,
+            backgroundColor:'rgba(34,211,238,0.15)', borderColor:CY,
+            borderWidth:1.5, borderRadius:6, yAxisID:'y',
+          },
+          {
+            type:'line', label:'Vendas',
+            data:<%= raw chart_counts.to_json %>,
+            borderColor:GR, backgroundColor:'rgba(52,211,153,0.08)',
+            borderWidth:2, pointBackgroundColor:GR, pointRadius:4, pointHoverRadius:6,
+            fill:false, tension:0.4, yAxisID:'y2',
+          }
+        ]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        interaction:{mode:'index',intersect:false},
+        plugins:{
+          legend:{display:false},
+          tooltip:{...tooltipDefaults, callbacks:{
+            label: ctx => ctx.datasetIndex === 0
+              ? ` R$ ${ctx.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:2})}`
+              : ` ${ctx.parsed.y} venda(s)`
+          }}
+        },
+        scales:{
+          x:{grid:{color:BD}, ticks:{color:MU, font:{...monoFont,size:11}, maxRotation:0}},
+          y:{position:'left', grid:{color:BD}, ticks:{color:MU, font:{...monoFont,size:10},
+            callback: v => 'R$'+(v>=1000?(v/1000).toFixed(1)+'k':v)}},
+          y2:{position:'right', grid:{drawOnChartArea:false}, ticks:{color:MU, font:{size:10}, stepSize:1}}
+        }
+      }
+    });
+  }
+
+  // ── Top Produtos ────────────────────────────────────
+  const topCtx = document.getElementById('lc-top-chart');
+  if (topCtx) {
+    const names  = <%= raw top_products.map(&:first).to_json %>;
+    const qtys   = <%= raw top_products.map(&:last).to_json %>;
+    const colors = [CY, '#38bdf8', '#818cf8', GR, AM];
+    new Chart(topCtx, {
+      type:'bar',
+      data:{
+        labels: names.map(n => n.length > 24 ? n.slice(0,24)+'…' : n),
+        datasets:[{
+          label:'Qtd vendida', data:qtys,
+          backgroundColor:colors.map(c=>c+'33'), borderColor:colors,
+          borderWidth:1.5, borderRadius:5,
+        }]
+      },
+      options:{
+        indexAxis:'y', responsive:true, maintainAspectRatio:false,
+        plugins:{
+          legend:{display:false},
+          tooltip:{...tooltipDefaults, callbacks:{label: ctx=>` ${ctx.parsed.x} unid.`}}
+        },
+        scales:{
+          x:{grid:{color:BD}, ticks:{color:MU, font:{...monoFont,size:10}, stepSize:1}},
+          y:{grid:{display:false}, ticks:{color:'#94a3b8', font:{size:11}}}
+        }
+      }
+    });
+  }
+})();
+</script>

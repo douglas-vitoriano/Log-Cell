@@ -1,0 +1,53 @@
+# --- Rails & Bundler ---
+/log/*
+/tmp/*
+/public/assets
+/public/packs
+/public/packs-test
+/node_modules
+/vendor/bundle
+.bundle/
+Gemfile.lock.test
+
+# --- Database (SQLite) ---
+/storage/*.sqlite3
+/storage/*.sqlite3-journal
+/storage/*.sqlite3-wal
+
+# --- Active Storage & Uploads ---
+/storage/test/
+/storage/development/
+/public/uploads
+
+# --- Environment & Secrets ---
+.env
+.env.*
+.env.local
+/config/master.key
+/config/credentials/*.key
+
+# --- Arch Linux / System ---
+.DS_Store
+.directory
+*~
+*.swp
+*.swo
+.fuse_hidden*
+
+# --- Testing & Coverage ---
+/coverage/
+/spec/examples.txt
+/.rspec_status
+/tmp/screenshots/
+
+# --- Tools & Versioning ---
+.ruby-version
+.ruby-gemset
+.tool-versions
+.mise.toml
+.projectile
+.vscode/
+.idea/
+
+# --- Assets & Propshaft ---
+/.propshaft-cache
