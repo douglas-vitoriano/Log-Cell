@@ -1,0 +1,9 @@
+
+app/views/**/*.html.erb linguist-vendored
+app/views/**/*.erb linguist-vendored
+
+app/assets/javascripts/**/*.js linguist-vendored
+app/assets/stylesheets/**/*.scss linguist-vendored
+app/assets/stylesheets/**/*.css linguist-vendored
+
+db/*.rb linguist-generated
