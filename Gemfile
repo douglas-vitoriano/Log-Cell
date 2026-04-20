@@ -92,7 +92,7 @@ gem "wkhtmltopdf-binary", "~> 0.12.6.10"
 gem "groupdate", "~> 6.8"
 
 # Ruby implementation of Nanoid, secure URL-friendly unique ID generator
-gem "nanoid", "~> 0.1.0"
+gem "nanoid", "~> 2.0.0"
 
 # A Ruby wrapper for the Cloudflare API.
 gem "cloudflare", "~> 4.5"
