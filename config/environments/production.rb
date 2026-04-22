@@ -79,10 +79,16 @@ Rails.application.configure do
   config.active_record.attributes_for_inspect = [ :id ]
 
   # Enable DNS rebinding protection and other `Host` header attacks.
-  # config.hosts = [
-  #   "example.com",     # Allow requests from example.com
-  #   /.*\.example\.com/ # Allow requests from subdomains like `www.example.com`
-  # ]
+  # Enable DNS rebinding protection and other `Host` header attacks.
+  config.hosts << "log-cell-production.up.railway.app"
+  config.hosts << /.*\.up\.railway\.app/
+
+  # Se tiver domínio próprio futuramente, adicione aqui:
+  # config.hosts << "logcell.xyz"
+  # config.hosts << "www.logcell.xyz"
+
+  # Skip DNS rebinding protection for the default health check endpoint.
+  # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
   #
   # Skip DNS rebinding protection for the default health check endpoint.
   # config.host_authorization = { exclude: ->(request) { request.path == "/up" } }
