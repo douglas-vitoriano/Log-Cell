@@ -80,7 +80,7 @@ Rails.application.configure do
 
   # Enable DNS rebinding protection and other `Host` header attacks.
   # Enable DNS rebinding protection and other `Host` header attacks.
-  config.hosts << "log-cell-production.up.railway.app"
+  config.hosts << "log-cell.up.railway.app"
   config.hosts << /.*\.up\.railway\.app/
 
   # Se tiver domínio próprio futuramente, adicione aqui:
