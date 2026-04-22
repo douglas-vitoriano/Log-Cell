@@ -7,6 +7,8 @@ bundle exec rails runner "
   if User.exists?(email: ENV.fetch('ADMIN_EMAIL', 'logcell@logcell.xyz'))
     puts 'Seeds ignorados — banco já populado.'
   else
+    rails db:migrate
+
     puts 'Rodando seeds...'
     load Rails.root.join('db/seeds.rb')
     puts 'Seeds concluídos.'
