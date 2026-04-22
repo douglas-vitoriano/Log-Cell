@@ -7,27 +7,24 @@
 #   ["Action", "Comedy", "Drama", "Horror"].each do |genre_name|
 #     MovieGenre.find_or_create_by!(name: genre_name)
 #   end
-puts "--- Iniciando Seeds ---"
-
 PaperTrail.enabled = false if defined?(PaperTrail)
 
 # 1. Usuário Administrador
-print "Criando Admin... "
-admin_email = ENV.fetch("ADMIN_EMAIL", "logcell@logcell.xyz")
-unless User.exists?(email: admin_email)
-  User.create!(
+admin_email = ENV.fetch("ADMIN_EMAIL", "dvitoriano89@gmail.com")
+admin = User.find_by(email: admin_email)
+
+unless admin
+  admin = User.create!(
     email:                 admin_email,
-    name:                  ENV.fetch("ADMIN_NAME", "Administrador"),
+    name:                  ENV.fetch("ADMIN_NAME", "Douglas"),
     password:              ENV.fetch("ADMIN_PASS", "Teste123"),
     password_confirmation: ENV.fetch("ADMIN_PASS", "Teste123"),
     document:              ENV.fetch("ADMIN_DOC", "000.000.000-00"),
-    phone:                 "(11) 00000-0000"
+    phone:                 "(11) 94366-8870"
   )
 end
-puts "OK!"
 
 # 2. Grupos de Acesso
-print "Criando Grupos... "
 groups_data = [
   { id: "5627aeec-ddad-4f78-9dfb-af182f410ea3", code: "sysadmin", name: "Administrador" },
   { id: "924919cf-0c51-472f-b8bc-7a685c3f9f47", code: "partner",  name: "Sócio" },
@@ -44,8 +41,11 @@ groups_data.each do |data|
 end
 puts "OK!"
 
+Group.all.each do |group|
+  UserAssignment.find_or_create_by!(user: admin, group: group)
+end
+
 # 3. Categorias
-print "Criando Categorias... "
 categories_map = {
   "Games"        => "🎮", "Headsets"  => "🎧", "Fones"        => "🎵",
   "Som"          => "🔊", "Controles" => "🕹️", "Brinquedos"   => "🧸",
@@ -60,7 +60,6 @@ end
 puts "OK!"
 
 # 4. Fornecedor
-print "Criando Fornecedor... "
 supplier = Supplier.find_or_create_by!(cnpj: "12869788000156") do |s|
   s.company_name = "Tech Import Ltda."
   s.contact_name = "Marcos Silva"
@@ -73,7 +72,6 @@ end
 puts "OK!"
 
 # 5. Produtos
-print "Criando Produtos com código estruturado (P + Cat + Nanoid)... "
 products_data = [
   { name: "Elden Ring - PS5", category: "Games", cost: 180.00, price: 299.90, stock: 5 },
   { name: "Zelda: Tears of the Kingdom", category: "Games", cost: 210.00, price: 349.90, stock: 3 },
@@ -120,9 +118,6 @@ products_data.each do |attrs|
     p.min_stock      = 5
   end
 end
-puts "OK!"
-
-puts "--- Criando Regras de Acesso (Rules) ---"
 
 rules_matrix = {
   "sysadmin" => {
@@ -168,6 +163,3 @@ rules_matrix.each do |group_code, resource_actions|
   print "  [#{group.name}] "
   puts "#{group.rules.count} regras criadas"
 end
-
-puts "--- Rules OK! ---"
-puts "--- Seeds Finalizados com Sucesso! ---"
