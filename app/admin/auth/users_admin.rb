@@ -19,9 +19,12 @@ Trestle.resource(:users, model: User, scope: Auth) do
     end
     column :name
     column :email, link: true
-    actions do |a|
-      # Não permite deletar sysadmin nem o próprio usuário logado
-      a.delete unless a.instance == current_user || a.instance.sysadmin?
+    column :groups, header: "Perfil" do |user|
+      user.groups.map(&:name).join(", ").presence || "—"
+    end
+    actions do |toolbar, instance|
+      toolbar.edit   if User.can_edit_user?(current_user, instance)
+      toolbar.delete if User.can_delete_user?(current_user, instance)
     end
   end
 
@@ -30,12 +33,19 @@ Trestle.resource(:users, model: User, scope: Auth) do
       col(sm: 6) { text_field :name }
       col(sm: 6) { text_field :email }
     end
-
     row do
       col(sm: 6) { password_field :password }
       col(sm: 6) { password_field :password_confirmation }
     end
-
+    row do
+      col(sm: 12) do
+        select :group_ids,
+          User.available_groups(current_user).map { |g| [ g.name, g.id ] },
+          { include_blank: "Nenhum perfil" },
+          label: "Perfil de acesso",
+          multiple: true
+      end
+    end
     row do
       col(sm: 12) { file_field :avatar, label: "Foto do perfil", accept: "image/*" }
     end
@@ -44,7 +54,7 @@ Trestle.resource(:users, model: User, scope: Auth) do
   update_instance do |instance, attrs|
     if attrs[:password].blank?
       attrs.delete(:password)
-      attrs.delete(:password_confirmation) if attrs[:password_confirmation].blank?
+      attrs.delete(:password_confirmation)
     end
     instance.assign_attributes(attrs)
   end
@@ -56,6 +66,9 @@ Trestle.resource(:users, model: User, scope: Auth) do
   end if Devise.sign_in_after_reset_password
 
   params do |params|
-    params.require(:user).permit(:name, :email, :password, :password_confirmation, :avatar)
+    params.require(:user).permit(
+      :name, :email, :password, :password_confirmation, :avatar,
+      group_ids: []
+    )
   end
 end

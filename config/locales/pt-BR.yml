@@ -201,3 +201,22 @@ pt-BR:
         paid: Pago
         overdue: Vencido
         cancelled: Cancelado
+  rules:
+    resources:
+      users: "Usuários"
+      groups: "Grupos"
+      rules: "Regras"
+      products: "Produtos"
+      categories: "Categorias"
+      customers: "Clientes"
+      suppliers: "Fornecedores"
+      movements: "Movimentações"
+      sales: "Vendas"
+      sale_items: "Itens de Venda"
+      accounts_payable: "Contas a Pagar"
+      accounts_receivable: "Contas a Receber"
+    actions:
+      read: "Leitura"
+      create: "Criação"
+      update: "Edição"
+      destroy: "Exclusão"

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_17_221045) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_22_144517) do
   create_table "accounts_payable", id: :string, force: :cascade do |t|
     t.string "aasm_state", default: "", null: false
     t.integer "amount_cents", null: false
@@ -174,6 +174,19 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_17_221045) do
     t.index ["supplier_id"], name: "index_products_on_supplier_id"
   end
 
+  create_table "rules", id: :string, force: :cascade do |t|
+    t.string "action", limit: 32, null: false
+    t.datetime "created_at", null: false
+    t.boolean "enabled", default: true
+    t.string "group_id", null: false
+    t.string "nanoid", null: false
+    t.string "resource", limit: 64, null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id", "resource", "action"], name: "index_rules_on_group_resource_action", unique: true
+    t.index ["group_id"], name: "index_rules_on_group_id"
+    t.index ["nanoid"], name: "index_rules_on_nanoid", unique: true
+  end
+
   create_table "sale_items", id: :string, force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "currency", default: "", null: false
@@ -242,6 +255,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_17_221045) do
     t.index ["user_id"], name: "index_user_assignments_on_user_id"
   end
 
+  create_table "user_permissions", id: :string, force: :cascade do |t|
+    t.string "group_id", null: false
+    t.string "nanoid", null: false
+    t.string "rules_id", null: false
+    t.string "user_assignment_id", null: false
+    t.index ["group_id"], name: "index_user_permissions_on_group_id"
+    t.index ["nanoid"], name: "index_user_permissions_on_nanoid", unique: true
+    t.index ["rules_id"], name: "index_user_permissions_on_rules_id"
+    t.index ["user_assignment_id"], name: "index_user_permissions_on_user_assignment_id"
+  end
+
   create_table "users", id: :string, force: :cascade do |t|
     t.datetime "birthday"
     t.string "civil_status", default: ""
@@ -288,10 +312,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_17_221045) do
   add_foreign_key "movements", "users"
   add_foreign_key "products", "categories"
   add_foreign_key "products", "suppliers"
+  add_foreign_key "rules", "groups"
   add_foreign_key "sale_items", "products"
   add_foreign_key "sale_items", "sales"
   add_foreign_key "sales", "customers"
   add_foreign_key "sales", "users"
   add_foreign_key "user_assignments", "groups"
   add_foreign_key "user_assignments", "users"
+  add_foreign_key "user_permissions", "groups"
+  add_foreign_key "user_permissions", "rules", column: "rules_id"
+  add_foreign_key "user_permissions", "user_assignments"
 end

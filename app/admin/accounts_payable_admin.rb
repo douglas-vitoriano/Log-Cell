@@ -13,10 +13,10 @@ Trestle.resource(:accounts_payable) do
   table do
     column :document_number
     column :description
-    column :supplier, ->(p) { p.supplier&.company_name || "—" }
+    column :supplier,  ->(p) { p.supplier&.company_name || "—" }
     column :category
-    column :amount,   ->(p) { p.amount.format }
-    column :due_date, format: :date
+    column :amount,    ->(p) { p.amount.format }
+    column :due_date,  format: :date
     column :aasm_state
     actions
   end

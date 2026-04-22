@@ -122,4 +122,52 @@ products_data.each do |attrs|
 end
 puts "OK!"
 
+puts "--- Criando Regras de Acesso (Rules) ---"
+
+rules_matrix = {
+  "sysadmin" => {
+    Rule::RESOURCES => Rule::ACTIONS
+  },
+  "partner" => {
+    %w[groups]  => %w[read update],
+    %w[rules]   => %w[read],
+    %w[users]   => %w[read create update destroy],
+    %w[products categories suppliers] => Rule::ACTIONS,
+    %w[sales sale_items customers]    => Rule::ACTIONS,
+    %w[movements accounts_payable accounts_receivable] => Rule::ACTIONS
+  },
+  "manager" => {
+    %w[products categories]           => %w[read create update],
+    %w[suppliers]                     => %w[read],
+    %w[sales sale_items customers]    => Rule::ACTIONS,
+    %w[movements]                     => %w[read create],
+    %w[accounts_receivable]           => %w[read],
+    %w[accounts_payable]              => %w[read],
+    %w[groups rules users]            => %w[read]
+  },
+  "operator" => {
+    %w[products]                      => %w[read],
+    %w[sales sale_items customers]    => %w[read create],
+    %w[movements]                     => %w[read create]
+  }
+}
+
+rules_matrix.each do |group_code, resource_actions|
+  group = Group.find_by!(code: group_code)
+
+  resource_actions.each do |resources, actions|
+    Array(resources).each do |resource|
+      Array(actions).each do |action|
+        Rule.find_or_create_by!(group: group, resource: resource, action: action) do |r|
+          r.enabled = true
+        end
+      end
+    end
+  end
+
+  print "  [#{group.name}] "
+  puts "#{group.rules.count} regras criadas"
+end
+
+puts "--- Rules OK! ---"
 puts "--- Seeds Finalizados com Sucesso! ---"
