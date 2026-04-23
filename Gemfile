@@ -126,7 +126,7 @@ group :development, :test do
   gem "dotenv", "~> 2.8"
 
   gem "guard-rspec", require: false
-  gem "rspec-rails", "~> 6.1.0"
+  gem "rspec-rails", "~> 8.0.4"
   gem "rspec-html-matchers", "~> 0.10.0"
   gem "rspec-sonarqube-formatter", "~> 1.5", require: false
 
