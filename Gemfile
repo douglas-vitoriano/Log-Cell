@@ -123,7 +123,7 @@ group :development, :test do
   gem "selenium-webdriver"
 
   # Loads env variables from dotnev file
-  gem "dotenv", "~> 2.8"
+  gem "dotenv", "~> 3.2"
 
   gem "guard-rspec", require: false
   gem "rspec-rails", "~> 6.1.0"
