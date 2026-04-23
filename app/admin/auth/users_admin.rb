@@ -1,3 +1,5 @@
+# app/admin/auth/users_admin.rb
+
 Trestle.resource(:users, model: User, scope: Auth) do
   menu do
     item :users, icon: "fas fa-users",
@@ -5,6 +7,9 @@ Trestle.resource(:users, model: User, scope: Auth) do
                  group: I18n.t("delimiter.config"),
                  priority: 9
   end
+
+  # Botão "Convidar" na toolbar da listagem
+
 
   table do
     column :avatar, header: false do |user|
@@ -22,7 +27,23 @@ Trestle.resource(:users, model: User, scope: Auth) do
     column :groups, header: "Perfil" do |user|
       user.groups.map(&:name).join(", ").presence || "—"
     end
+    column :invitation_accepted_at, header: "Status" do |user|
+      if user.invitation_accepted_at.present?
+        tag.span("Ativo", class: "badge badge-success")
+      elsif user.invitation_sent_at.present?
+        tag.span("Convite enviado", class: "badge badge-warning")
+      else
+        tag.span("Sem convite", class: "badge badge-secondary")
+      end
+    end
     actions do |toolbar, instance|
+      # Reenviar convite se ainda não foi aceito
+      if instance.invitation_sent_at.present? && instance.invitation_accepted_at.nil?
+        toolbar.link "Reenviar",
+                     admin_reinvite_user_path(instance),
+                     data: { turbo_method: :post },
+                     class: "btn btn-sm btn-outline-warning"
+      end
       toolbar.edit   if User.can_edit_user?(current_user, instance)
       toolbar.delete if User.can_delete_user?(current_user, instance)
     end

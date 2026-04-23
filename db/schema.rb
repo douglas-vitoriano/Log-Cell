@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_04_22_202842) do
+ActiveRecord::Schema[8.1].define(version: 2026_04_22_210508) do
   create_table "accounts_payable", id: :string, force: :cascade do |t|
     t.string "aasm_state", default: "", null: false
     t.integer "amount_cents", null: false
@@ -275,6 +275,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_202842) do
     t.string "document", default: "", null: false
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
+    t.datetime "invitation_accepted_at"
+    t.datetime "invitation_created_at"
+    t.integer "invitation_limit"
+    t.datetime "invitation_sent_at"
+    t.string "invitation_token"
+    t.integer "invitations_count", default: 0
+    t.string "invited_by_id"
+    t.string "invited_by_type"
     t.string "name", null: false
     t.string "nanoid", null: false
     t.string "other_contacts", limit: 1024, default: "", null: false
@@ -285,6 +293,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_04_22_202842) do
     t.datetime "updated_at", null: false
     t.index ["discarded_at"], name: "index_users_on_discarded_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["invitation_token"], name: "index_users_on_invitation_token", unique: true
+    t.index ["invited_by_id"], name: "index_users_on_invited_by_id"
+    t.index ["invited_by_type", "invited_by_id"], name: "index_users_on_invited_by"
     t.index ["nanoid"], name: "index_users_on_nanoid", unique: true
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end

@@ -2,7 +2,7 @@ class User < ApplicationRecord
   include Nanoidable
   include Discard::Model
 
-  devise :database_authenticatable, :registerable,
+  devise :invitable, :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable
 
   has_many :sales

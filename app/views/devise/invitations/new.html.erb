@@ -1,0 +1,23 @@
+<%# app/views/devise/invitations/new.html.erb %>
+<div class="trestle-login">
+  <h2>Convidar novo usuário</h2>
+
+  <%= form_for resource, as: resource_name, url: invitation_path(resource_name) do |f| %>
+    <div class="form-group">
+      <%= f.label :name, "Nome completo" %>
+      <%= f.text_field :name, class: "form-control", placeholder: "Nome do usuário" %>
+    </div>
+    <div class="form-group">
+      <%= f.label :email, "E-mail" %>
+      <%= f.email_field :email, class: "form-control", placeholder: "email@exemplo.com" %>
+    </div>
+    <div class="form-group">
+      <%= f.label :group_ids, "Perfil de acesso" %>
+      <%= f.select :group_ids,
+            User.available_groups(current_user).map { |g| [g.name, g.id] },
+            { include_blank: "Nenhum perfil" },
+            { class: "form-control", multiple: true } %>
+    </div>
+    <%= f.submit "Enviar convite", class: "btn btn-primary btn-block" %>
+  <% end %>
+</div>

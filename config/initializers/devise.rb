@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 Devise.setup do |config|
-  config.mailer_sender = "please-change-me-at-config-initializers-devise@example.com"
+  config.mailer_sender = "LogCell <noreply@log-cell.up.railway.app>"
 
   require "devise/orm/active_record"
 
@@ -17,4 +17,5 @@ Devise.setup do |config|
   config.sign_out_via = :delete
   config.responder.error_status = :unprocessable_content
   config.responder.redirect_status = :see_other
+  config.invite_for = 7.days
 end

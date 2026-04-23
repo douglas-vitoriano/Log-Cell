@@ -1,0 +1,13 @@
+pt-BR:
+  devise:
+    invitations:
+      send_instructions: "Um convite foi enviado para %{email}."
+      invitation_token_invalid: "O token de convite é inválido!"
+      updated: "Sua senha foi definida com sucesso. Você está conectado."
+      updated_not_active: "Sua senha foi definida com sucesso."
+      no_invitations_remaining: "Nenhum convite restante disponível."
+      invitation_removed: "Seu convite foi removido."
+      new:
+        header: "Convidar novo usuário"
+      edit:
+        header: "Definir senha"

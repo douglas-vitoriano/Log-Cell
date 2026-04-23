@@ -52,6 +52,9 @@ gem "trestle-auth", "~> 0.5.0"
 # Flexible authentication solution for Rails with Warden
 gem "devise", "~> 5.0", ">= 5.0.3"
 
+# It adds support for send invitations by email (it requires to be authenticated) and accept the invitation by setting a password.
+gem "devise_invitable", "~> 2.0", ">= 2.0.11"
+
 # AASM is a continuation of the acts-as-state-machine rails plugin, built for plain Ruby objects.
 gem "aasm", "~> 5.5", ">= 5.5.2"
 

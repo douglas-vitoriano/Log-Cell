@@ -1,5 +1,15 @@
 Rails.application.routes.draw do
-  devise_for :users
+  devise_for :users,
+             controllers: {
+               invitations: "users/invitations"
+             }
+
+  devise_scope :user do
+    post "admin/users/:id/reinvite",
+         to: "users/invitations#reinvite",
+         as: :admin_reinvite_user
+  end
+
   root to: "home#index"
 
   namespace :admin do

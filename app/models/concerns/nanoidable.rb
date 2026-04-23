@@ -3,8 +3,10 @@ module Nanoidable
 
   included do
     before_validation :generate_ids, on: :create
+    before_create     :generate_ids
     validates :nanoid, presence: true, uniqueness: true
   end
+
 
   def to_param
     nanoid.presence || id

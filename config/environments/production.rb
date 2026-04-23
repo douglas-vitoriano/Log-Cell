@@ -22,6 +22,15 @@ Rails.application.configure do
   config.active_job.queue_adapter = :solid_queue
 
   config.action_mailer.default_url_options = { host: "log-cell.up.railway.app" }
+  config.action_mailer.delivery_method = :smtp
+  config.action_mailer.smtp_settings = {
+    address:              ENV["SMTP_HOST"],
+    port:                 587,
+    user_name:            ENV["SMTP_USER"],
+    password:             ENV["SMTP_PASSWORD"],
+    authentication:       "plain",
+    enable_starttls_auto: true
+  }
 
   config.i18n.fallbacks = true
   config.active_record.dump_schema_after_migration = false
