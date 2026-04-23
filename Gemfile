@@ -135,7 +135,7 @@ group :development, :test do
   gem "database_cleaner-active_record"
 
   gem "webmock", "~> 3.23"
-  gem "faker", "~> 3.4"
+  gem "faker", "~> 3.8"
 
   gem "simplecov"
   gem "simplecov-json"
