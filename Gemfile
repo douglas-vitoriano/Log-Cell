@@ -50,7 +50,7 @@ gem "trestle-search", "~> 0.5.1"
 gem "trestle-auth", "~> 0.5.0"
 
 # Flexible authentication solution for Rails with Warden
-gem "devise", "~> 5.0", ">= 5.0.3"
+gem "devise", "~> 5.0"
 
 # It adds support for send invitations by email (it requires to be authenticated) and accept the invitation by setting a password.
 gem "devise_invitable", "~> 2.0", ">= 2.0.11"
